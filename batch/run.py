@@ -1,19 +1,21 @@
 # NST code from (C) deeplearning.ai
 
+import os
+
 from datetime import datetime
 from utils.misc import *
 from utils.graph import TFGraph
 
-CONTENT_IMAGE = 'input/content.jpg'
-STYLE_IMAGE = 'input/style.jpg'
-GENERATED_IMAGE = 'output/generated.jpg'
+CONTENT_IMAGE = f'content.{os.environ["SESSION_ID"]}.jpg'
+STYLE_IMAGE = 'style.jpg'
+GENERATED_IMAGE = f'generated.{os.environ["SESSION_ID"]}.jpg'
 
-MODEL_FILE = "C:/Users/Okeer/conv/week4/Neural Style Transfer/pretrained-model/imagenet-vgg-verydeep-19.mat" #"imagenet-vgg-verydeep-19.mat"
+MODEL_FILE = "imagenet-vgg-verydeep-19.mat"
 
 step = datetime.now()
 
 graph = TFGraph(CONTENT_IMAGE, STYLE_IMAGE, MODEL_FILE)
-generated_image = graph.run(1)
+generated_image = graph.run(300)
 
 # save last generated image
 save_image(GENERATED_IMAGE, generated_image)
