@@ -1,13 +1,22 @@
 # Description
 
-AWS-based solution of Neural Style Transfer app.
+AWS-based solution of [Neural Style Transfer](https://en.wikipedia.org/wiki/Neural_Style_Transfer) app.
 
-## Technologies
+## How it works
 
-* AWS Lambda/Python=3.7 with python-telegram-bot to orchestrate all of this
-* S3 to store data/MQ
-* S3 triggers to notify Lambda on new images in S3
-* AWS Batch on GPU(P-series EC2 instances) to run style transfer
+NST is quite heavy on computation resources, thus GPU enabled instances of EC2 - P series - is used. Since running such instance on permanent basis is quite a luxury even in production, cost-effective AWS batchis selected to run style transfer on demand.
+
+### AWS Labda based `python-telegram-bot` function
+
+This function uploads received images to s3 bucket and handles s3 events on new images in s3 bucket - depending on the name of an image (content/generated) it invokes `AWS batch` (content) or sends generated image (generated).
+
+### AWS Batch - Tensorflow docker image based on [AWS DL Container images](https://docs.aws.amazon.com/dlami/latest/devguide/deep-learning-containers-images.html)
+
+Custom image runs the bootstrap script `entrypoint.py` which downloads tensorflow implementation of NST, fetches style and content images from s3 bucket, runs interference, uploads generated image and terminates container
+
+### S3
+
+CloudFormation template creates a temporary bucket with the stack which is used to store intermediate images and trigger notification event to drive Lambda function.
 
 # How to build and deploy
 
@@ -20,22 +29,28 @@ AWS-based solution of Neural Style Transfer app.
 ## Steps
 
 1. Clone this repo and cd to it;
-2. Build lambda package:
+2. Build docker image and [push it to ECR](https://docs.aws.amazon.com/dlami/latest/devguide/deep-learning-containers-custom-images.html):
+```
+cd docker
+docker build -t nst:latest .
+```
+3. Replace `JobDefinition/Properties/ContainerProperties/Image` in `cloudformation/template.yaml` with built image;
+4. Build lambda package:
 ```
 # sam build --use-container -t cloudformation\template.yaml -s .
 ```
-3. Upload the package to s3:
+5. Upload the package to s3:
 ```
 # sam package --s3-bucket okeer-dev --output-template-file package.yaml
 ```
-4. Deploy the stack to AWS:
+6. Deploy the stack to AWS:
 *NOTE*: do not forget to replace `telegram_bot_api_key` and `any_available_name` with actual values.
 
 ```
 # aws cloudformation deploy --template-file package.yaml --stack-name nst --capabilities CAPABILITY_IAM --force-upload --parameter-overrides "ApiKey=`telegram_bot_api_key`" "BucketName=`any_available_name`"
 ```
-5. Download [VGG19](http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat) model to `any_available_name` S3 bucket along with style.jpg image - this image style will be used in image processing;
-6. Post an image to telegram bot and wait until app will process it.
+7. Download [VGG19](http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat) model to `any_available_name` S3 bucket along with style.jpg image - this image style will be used in image processing;
+8. Post an image to telegram bot and wait until app will process it.
 
 # Reference
 
