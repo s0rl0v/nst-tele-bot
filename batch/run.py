@@ -15,7 +15,7 @@ MODEL_FILE = "imagenet-vgg-verydeep-19.mat"
 step = datetime.now()
 
 graph = TFGraph(CONTENT_IMAGE, STYLE_IMAGE, MODEL_FILE)
-generated_image = graph.run(300)
+generated_image = graph.run(1500)
 
 # save last generated image
 save_image(GENERATED_IMAGE, generated_image)
