@@ -1,5 +1,3 @@
-from telegram import ParseMode
-
 import os
 import io
 import boto3
@@ -64,8 +62,8 @@ def upload_file_to_s3(file_bytes, bucket_name, filename):
 
 
 def on_help_cmd_handler(bot, update):
-    update.message.reply_text("Please send an image - bot will run a Neural Style Transfer algorythm on it and will send you a result as soon as possible",
-                              parse_mode=ParseMode.MARKDOWN)
+    update.message.reply_text(
+        "Please send an image - the bot will run a Neural Style Transfer algorithm on it and will send you a result as soon as possible")
 
 
 def on_photo_received_handler(bot, update):
@@ -76,4 +74,6 @@ def on_photo_received_handler(bot, update):
     upload_file_to_s3(
         file_bytes, os.environ['bucket_name'], f'{CONTENT}.{chat_id}.jpg')
 
-    update.message.reply_text(f"Image from {chat_id} chat has been uploaded")
+    print(f"Image from {chat_id} chat has been uploaded")
+    update.message.reply_text(
+        "Thanks! I've started style transfer, please wait a bit - this could take long time (~10 min).")
