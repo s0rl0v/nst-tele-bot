@@ -6,7 +6,6 @@ Parameters:
     Type: String
   ApiKey:
     Type: String
-
 Globals:
   Function:
     Timeout: 3
@@ -16,9 +15,10 @@ Resources:
     DependsOn:
     - JobQueue
     - JobDefinition
+    - AllowedUsersDynamoDB
     Properties:
       CodeUri: nst-lambda/
-      Handler: app.lambda_handler
+      Handler: app.MyLambdaClassHandler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.7
       Events:
@@ -29,10 +29,11 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          api_key: !Sub '${ApiKey}'
+          api_key: !Ref ApiKey
           job_definition: !Ref JobDefinition
           job_queue: !Ref JobQueue
           bucket_name: !Ref BucketName
+          ACCESS_TABLE: !Ref AllowedUsersDynamoDB
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -64,6 +65,18 @@ Resources:
               Action:
                 - 'batch:SubmitJob'
               Resource: '*'
+      - PolicyName: dynamodbAccessRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+              - dynamodb:*
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - logs:*
+              Resource: "*"
   Bucket:
     Type: AWS::S3::Bucket
     DependsOn:
@@ -79,7 +92,6 @@ Resources:
                 Rules:
                 - Name: suffix
                   Value: .jpg
-
   ProcessingLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -88,6 +100,26 @@ Resources:
       Principal: s3.amazonaws.com
       SourceArn: !Sub 'arn:aws:s3:::${BucketName}'
       SourceAccount: !Ref AWS::AccountId
+  ComputeEnvironment:
+    Type: 'AWS::Batch::ComputeEnvironment'
+    Properties:
+      Type: MANAGED
+      ComputeResources:
+        SpotIamFleetRole: !GetAtt 
+          - AmazonEC2SpotFleetRole
+          - Arn
+        Type: SPOT
+        MinvCpus: 0
+        DesiredvCpus: 0
+        MaxvCpus: 64
+        InstanceTypes:
+          - p2.xlarge
+        Subnets:
+          - !Ref Subnet
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        InstanceRole: !Ref IamInstanceProfile
+      ServiceRole: !Ref BatchServiceRole
   VPC:
     Type: 'AWS::EC2::VPC'
     Properties:
@@ -202,6 +234,7 @@ Resources:
             Value: '1'
       RetryStrategy:
         Attempts: 1
+
   JobQueue:
     Type: 'AWS::Batch::JobQueue'
     Properties:
@@ -209,26 +242,16 @@ Resources:
       ComputeEnvironmentOrder:
         - Order: 1
           ComputeEnvironment: !Ref ComputeEnvironment
-  ComputeEnvironment:
-    Type: 'AWS::Batch::ComputeEnvironment'
-    Properties:
-      Type: MANAGED
-      ComputeResources:
-        SpotIamFleetRole: !GetAtt 
-          - AmazonEC2SpotFleetRole
-          - Arn
-        Type: SPOT
-        MinvCpus: 0
-        DesiredvCpus: 0
-        MaxvCpus: 64
-        InstanceTypes:
-          - p2.xlarge
-        Subnets:
-          - !Ref Subnet
-        SecurityGroupIds:
-          - !Ref SecurityGroup
-        InstanceRole: !Ref IamInstanceProfile
-      ServiceRole: !Ref BatchServiceRole
+  AllowedUsersDynamoDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
 Outputs:
   ComputeEnvironmentArn:
     Value: !Ref ComputeEnvironment
