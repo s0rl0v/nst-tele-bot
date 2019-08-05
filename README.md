@@ -2,6 +2,11 @@
 
 AWS-based solution of [Neural Style Transfer](https://en.wikipedia.org/wiki/Neural_Style_Transfer) app.
 
+<p float="left">
+  <img src="./images/ex1.png" alt="Made with Angular" title="Angular" width="320"/>
+  <img src="./images/ex2.png" alt="Made with Bootstrap" title="Bootstrap" width="320"/>
+</p>
+
 ## How it works
 
 NST is quite heavy on computation resources, thus GPU enabled instances of EC2 - P series - is used. Since running such instance on permanent basis is quite a luxury even in production, cost-effective AWS batchis selected to run style transfer on demand.
