@@ -8,7 +8,7 @@ Parameters:
     Type: String
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 5
 Resources:
   BotFunction:
     Type: AWS::Serverless::Function
