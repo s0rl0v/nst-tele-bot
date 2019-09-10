@@ -92,6 +92,11 @@ Resources:
                 Rules:
                 - Name: suffix
                   Value: .jpg
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls : true
+        BlockPublicPolicy : true
+        IgnorePublicAcls : true
+        RestrictPublicBuckets : true
   ProcessingLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
