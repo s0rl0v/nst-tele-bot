@@ -40,22 +40,29 @@ cd docker
 docker build -t nst:latest .
 ```
 3. Replace `JobDefinition/Properties/ContainerProperties/Image` in `cloudformation/template.yaml` with built image;
-4. Build lambda package:
+4. Paste your values into variables:
+
+```
+export BUCKET_NAME=name
+export TELEGRAM_BOT_API_KEY=key
+```
+
+5. Build lambda package:
 ```
 # sam build --use-container -t cloudformation\template.yaml -s .
 ```
-5. Upload the package to s3:
+6. Upload the package to s3:
 ```
-# sam package --s3-bucket okeer-dev --output-template-file package.yaml
+# sam package --s3-bucket $BUCKET_NAME --output-template-file package.yaml
 ```
-6. Deploy the stack to AWS:
-*NOTE*: do not forget to replace `telegram_bot_api_key` and `any_available_name` with actual values.
+7. Deploy the stack to AWS:
 
 ```
-# aws cloudformation deploy --template-file package.yaml --stack-name nst --capabilities CAPABILITY_IAM --force-upload --parameter-overrides "ApiKey=`telegram_bot_api_key`" "BucketName=`any_available_name`"
+# aws cloudformation deploy --template-file package.yaml --stack-name nst --capabilities CAPABILITY_IAM --force-upload --parameter-overrides "ApiKey=TELEGRAM_BOT_API_KEY" "BucketName=$BUCKET_NAME"
 ```
-7. Download [VGG19](http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat) model to `any_available_name` S3 bucket along with style.jpg image - this image style will be used in image processing;
-8. Post an image to telegram bot and wait until app will process it.
+
+8. Download [VGG19](http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat) model to `$BUCKET_NAME` S3 bucket along with `style.jpg` image - this image style will be used in image processing;
+9. Post an image to telegram bot and wait until app will process it.
 
 # Reference
 
